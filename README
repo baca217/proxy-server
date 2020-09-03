@@ -1,0 +1,39 @@
+Elmer Baca Holguin
+
+Functions
+
+int main():
+Function is meant to intialize necessary processes such as the binding of a socket and the listening of a port. Most of the actual work is handed off to other functions. Main is just the encapsalation of all these functions. Takes in two arguments, the port to listen on and the ttl for the cache
+
+int open_listenfd():
+Function sets up a socket to listen for traffic on the port specified by the user. Standard process other than the socket option I set to allow re-binding of the same socket to allow for other connections and peristent connections. The socket is set to listen after being initialized.
+
+int msg_work():
+Functions receives the input from the client then parses it for the method (GET), the url requested, and the HTTP version. These are all checked for errors. If one is detected and error 400 bad request is sent to the client. It calls other functions to check if the url is blacklisted, if it's cached, and then connecting to a http server if the url is not cached for retrieval.
+
+void term_char():
+Function just replaces a char within a string. The char is passed in as an argument and a pointer to the string to be changed is also passed in. This is done so the string, which is really the url can be passed to the gethostbyname() function for resolving the IP.
+
+int connect_http_server():
+Function sets up a TCP connection to a HTTP server for retrieval of a webpage. It starts off by changing the url, provided as an argument, in order to make it easier to parse. The port is also parsed by pull_port (more on it later). It then tests of the url provided is an ip address. If it's not we try and resolve the hostname with gethostbyname(). If that doesn't work we sent an error 500 to the client, indicating an internal server error. If all goes good we setup a socket, with the option to re-bind and also a timeout option. We then forward the request from the user to the HTTP server. Finally we recieve the information from the http server (unless it timed out where an error is thrown), we forward the data to the client, and finally cache the file.
+
+char *pull_port()
+Function parses the url, passed in as an argument. It checks for the char ':' which indicates a certain port will be used to connect. If that char doesn't exist we just set a default port which is 80. This memory is malloced and passed back to the caller.
+
+bool in_cache()
+Function hashes the url which is passed as an argument, and tries to open a file with that name. If the file doesn't exist then we return a false and is handled somewhere else. If the file is cached we send it to the client and return true only if the file hasn't expired.
+
+void cache_file()
+Function hashes the url and creates a newfile using that hash. The webpage contents are then stored into that file for later usage.
+
+void send_error()
+function just takes in an error code as an argument and sends it to the client.
+
+bool is_blacklisted()
+Function gets the url passed into it as an argument. The file then opens a file call "blacklisted.txt" and checks to see if the url contains any of the blacklisted urls. Returns false if it's not found or the file doesn't exist. Returns true if the url is blacklisted.
+
+int check_args()
+Function checks the arguments passed in by the command line. Ensures the port and ttl arguments are numbers. Also checks that port number falls between a certain range and ensure ttl is greater than 0.
+
+void *thread()
+Function that just takes the client connection file descriptor and ttl within an argument structure. It unpacks them, frees the structure and passes the arguments to msg_work which will determine what we will do with the connection.
